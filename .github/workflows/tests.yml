@@ -40,6 +40,12 @@ jobs:
       - name: Fetch token WASM artifact
         run: bash scripts/fetch_token_wasm.sh
 
+      # W2-Z-016: Pin Node 20 LTS; Node 18 is EOL (AZ-031).
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
       - name: Run Clippy
         # AX-011: --locked pins cargo to the committed Cargo.lock.
         run: cargo clippy --locked --workspace
