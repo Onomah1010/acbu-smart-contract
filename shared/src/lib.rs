@@ -303,6 +303,12 @@ pub enum ContractError {
     /// cause unacceptable slippage for this transaction.
     SlippageExceeded = 13,
 
+    /// The vault has not approved the burning contract as a spender with
+    /// sufficient allowance for the requested S-token transfer.  Ensure the
+    /// vault calls `approve(burning_contract, amount, expiry)` on each S-token
+    /// before redemption.
+    VaultAllowanceInsufficient = 14,
+
     Unknown = 9999,
 }
 
@@ -322,6 +328,7 @@ impl core::fmt::Display for ContractError {
             ContractError::InvalidRecipient => write!(f, "invalid recipient"),
             ContractError::InvalidVersion => write!(f, "invalid version"),
             ContractError::SlippageExceeded => write!(f, "output below minimum: slippage exceeded"),
+            ContractError::VaultAllowanceInsufficient => write!(f, "vault has not approved the burning contract as spender"),
             ContractError::Unknown => write!(f, "unknown error"),
         }
     }

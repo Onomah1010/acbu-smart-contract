@@ -223,6 +223,7 @@ impl BurningContract {
 
         let token = soroban_sdk::token::Client::new(&env, &stoken);
         let spender = env.current_contract_address();
+        Self::assert_vault_allowance(&env, &token, &vault, &spender, stoken_out);
         token.transfer_from(&spender, &vault, &recipient, &stoken_out);
 
 
@@ -496,6 +497,7 @@ impl BurningContract {
             if native_i > 0 {
                 let token = soroban_sdk::token::Client::new(&env, &stoken);
                 let spender = env.current_contract_address();
+                Self::assert_vault_allowance(&env, &token, &vault, &spender, native_i);
                 token.transfer_from(&spender, &vault, &recipient, &native_i);
             }
             amounts_out.push_back(native_i);
@@ -797,6 +799,21 @@ impl BurningContract {
     fn validate_recipient(env: &Env, recipient: &Address) {
         if *recipient == env.current_contract_address() {
             env.panic_with_error(ContractError::InvalidRecipient);
+        }
+    }
+
+    /// Panics with `VaultAllowanceInsufficient` if the vault has not granted the
+    /// burning contract a spender allowance of at least `required` on `token`.
+    fn assert_vault_allowance(
+        env: &Env,
+        token: &soroban_sdk::token::Client,
+        vault: &Address,
+        spender: &Address,
+        required: i128,
+    ) {
+        let allowance = token.allowance(vault, spender);
+        if allowance < required {
+            env.panic_with_error(ContractError::VaultAllowanceInsufficient);
         }
     }
 
