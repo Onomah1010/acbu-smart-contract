@@ -5,6 +5,12 @@ use soroban_sdk::{
 };
 
 use shared::{
+    calculate_fee, check_oracle_freshness, is_account_address, reentrancy_guard, BurnEvent,
+    ContractError, ContractPhase, CurrencyCode, DataKey as SharedDataKey, BASIS_POINTS,
+    CONTRACT_VERSION, DECIMALS, MIN_BURN_AMOUNT, ORACLE_GET_ACBU_RATE_WITH_TS,
+    ORACLE_GET_BASKET_WEIGHT, ORACLE_GET_CURRENCIES, ORACLE_GET_RATE_WITH_TS,
+    ORACLE_GET_S_TOKEN_ADDR, RESERVE_IS_SUFFICIENT, TOKEN_GET_TOTAL_SUPPLY,
+    UPDATE_INTERVAL_SECONDS,
     any_circuit_peer_paused, calculate_fee, check_oracle_freshness, reentrancy_guard,
     validate_circuit_peers, BurnEvent, ContractError,
     ContractPhase, CurrencyCode, DataKey as SharedDataKey, BASIS_POINTS, CONTRACT_VERSION,
@@ -289,6 +295,7 @@ impl BurningContract {
         }
 
         for i in 0..recipients.len() {
+            Self::validate_recipient(&env, &recipients.get(i).unwrap());
             for j in (i + 1)..recipients.len() {
                 if recipients.get(i).unwrap() == recipients.get(j).unwrap() {
                     env.panic_with_error(ContractError::InvalidRecipient);
@@ -892,8 +899,11 @@ impl BurningContract {
         admin.require_auth();
     }
 
+    /// Redeem recipients must be `G…` accounts, the same rule the minting
+    /// contract applies (AC-031). This also rejects this contract's own
+    /// address, since contract addresses are `C…`.
     fn validate_recipient(env: &Env, recipient: &Address) {
-        if *recipient == env.current_contract_address() {
+        if !is_account_address(recipient) {
             env.panic_with_error(ContractError::InvalidRecipient);
         }
     }

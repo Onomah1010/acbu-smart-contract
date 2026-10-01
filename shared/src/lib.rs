@@ -607,6 +607,23 @@ pub fn calculate_amount_after_fee(amount: i128, fee_rate_bps: i128) -> Result<i1
         .ok_or(ContractError::ArithmeticOverflow)
 }
 
+/// Returns `true` if `address` is a classic Stellar account (a `G…` strkey).
+///
+/// Mint and redeem recipients must be accounts: tokens sent to a contract
+/// address (`C…`), including the minting/burning contract itself, can be
+/// stranded. Both halves of the flow use this one predicate so their
+/// stranding protection cannot drift apart (AC-031). Callers panic with their
+/// own `InvalidRecipient` error so contract error codes stay unchanged.
+pub fn is_account_address(address: &Address) -> bool {
+    let strkey = address.to_string();
+    if strkey.len() != 56 {
+        return false;
+    }
+    let mut buf = [0u8; 56];
+    strkey.copy_into_slice(&mut buf);
+    buf[0] == b'G'
+}
+
 /// Calculate median using in-place quickselect algorithm
 /// This avoids unnecessary allocations (clone) and reduces gas consumption
 pub fn median(mut values: soroban_sdk::Vec<i128>) -> Option<i128> {
