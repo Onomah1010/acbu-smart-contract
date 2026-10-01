@@ -138,16 +138,18 @@ Provides multi-signature authorization for administrative actions.
 ### Key Functions
 
 - `initialize`: Set up signers and threshold
-- `propose`: Create new proposal
+- `propose(target, action)`: Create a proposal authorising a typed action on a specific contract
 - `approve`: Approve proposal (signer function)
-- `execute`: Execute approved proposal
-- `add_signer/remove_signer`: Manage signers
+- `execute`: Execute the approved proposal, invoking exactly the stored target and action
+- `propose_update_config`: Propose a new signer set and threshold
+- `propose_upgrade`: Propose a WASM upgrade of the multisig itself
 
 ### Security
 
 - M-of-N threshold signatures
 - Proposal expiry
-- Nonce-based replay prevention
+- Approvals and execution are bound to a typed `MultisigAction` and target, so a
+  proposal can only ever perform the action the signers approved
 
 ---
 

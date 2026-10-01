@@ -100,7 +100,8 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.88.0
+          toolchain: "1.88.0"
           targets: wasm32-unknown-unknown
 
       # -----------------------------------------------------------------------
@@ -114,6 +115,15 @@ jobs:
           key: ${{ runner.os }}-cargo-deploy-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-deploy-
+
+      # -----------------------------------------------------------------------
+      # W2-Z-016: Pin Node 20 LTS; Node 18 is EOL (AZ-031).
+      # Required for createJsonArgs.js and other JS helper scripts invoked
+      # during the deploy pipeline.
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
 
       # -----------------------------------------------------------------------
       - name: Install Stellar CLI

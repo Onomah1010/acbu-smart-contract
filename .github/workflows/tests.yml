@@ -23,21 +23,33 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.88.0
+          toolchain: "1.88.0"
           targets: wasm32-unknown-unknown
 
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - name: Cache cargo registry and build artifacts
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml', 'rust-toolchain.toml') }}
+            target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-test-
 
       - name: Fetch token WASM artifact
         run: bash scripts/fetch_token_wasm.sh
+
+      # W2-Z-016: Pin Node 20 LTS; Node 18 is EOL (AZ-031).
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Run Clippy
+        # AX-011: --locked pins cargo to the committed Cargo.lock.
+        run: cargo clippy --locked --workspace
 
       - name: Determine changed packages
         id: changed
@@ -103,7 +115,8 @@ jobs:
 
       - name: Run changed contract tests
         if: github.event_name == 'pull_request' && steps.changed.outputs.workspace != 'true' && steps.changed.outputs.packages != ''
-        run: cargo test ${{ steps.changed.outputs.packages }} -- --nocapture
+        # AX-011: --locked pins resolution to the committed Cargo.lock.
+        run: cargo test --locked ${{ steps.changed.outputs.packages }} -- --nocapture
 
       - name: Skip tests for docs-only PR
         if: github.event_name == 'pull_request' && steps.changed.outputs.workspace != 'true' && steps.changed.outputs.packages == ''
@@ -111,4 +124,5 @@ jobs:
 
       - name: Run all tests
         if: github.event_name != 'pull_request' || steps.changed.outputs.workspace == 'true'
-        run: cargo test --workspace -- --nocapture
+        # AX-011: --locked pins resolution to the committed Cargo.lock.
+        run: cargo test --locked --workspace -- --nocapture
